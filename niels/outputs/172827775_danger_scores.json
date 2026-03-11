@@ -1,107 +1,80 @@
 [
   {
-    "column": 1,
-    "x_range": [
+    "zone": 1,
+    "y_range": [
       0,
-      43
+      57
     ],
-    "danger_score": 9,
+    "danger_score": 12,
     "danger_level": "low"
   },
   {
-    "column": 2,
-    "x_range": [
-      43,
-      86
+    "zone": 2,
+    "y_range": [
+      57,
+      115
     ],
-    "danger_score": 34,
-    "danger_level": "medium"
-  },
-  {
-    "column": 3,
-    "x_range": [
-      86,
-      130
-    ],
-    "danger_score": 5,
+    "danger_score": 22,
     "danger_level": "low"
   },
   {
-    "column": 4,
-    "x_range": [
-      130,
+    "zone": 3,
+    "y_range": [
+      115,
       173
-    ],
-    "danger_score": 2,
-    "danger_level": "low"
-  },
-  {
-    "column": 5,
-    "x_range": [
-      173,
-      216
-    ],
-    "danger_score": 2,
-    "danger_level": "low"
-  },
-  {
-    "column": 6,
-    "x_range": [
-      216,
-      260
-    ],
-    "danger_score": 0,
-    "danger_level": "low"
-  },
-  {
-    "column": 7,
-    "x_range": [
-      260,
-      303
     ],
     "danger_score": 1,
     "danger_level": "low"
   },
   {
-    "column": 8,
-    "x_range": [
-      303,
+    "zone": 4,
+    "y_range": [
+      173,
+      231
+    ],
+    "danger_score": 1,
+    "danger_level": "low"
+  },
+  {
+    "zone": 5,
+    "y_range": [
+      231,
+      288
+    ],
+    "danger_score": 0,
+    "danger_level": "low"
+  },
+  {
+    "zone": 6,
+    "y_range": [
+      288,
       346
     ],
     "danger_score": 1,
     "danger_level": "low"
   },
   {
-    "column": 9,
-    "x_range": [
+    "zone": 7,
+    "y_range": [
       346,
-      390
+      404
     ],
-    "danger_score": 2,
+    "danger_score": 1,
     "danger_level": "low"
   },
   {
-    "column": 10,
-    "x_range": [
-      390,
-      433
+    "zone": 8,
+    "y_range": [
+      404,
+      462
     ],
-    "danger_score": 27,
-    "danger_level": "medium"
+    "danger_score": 69,
+    "danger_level": "high"
   },
   {
-    "column": 11,
-    "x_range": [
-      433,
-      476
-    ],
-    "danger_score": 99,
-    "danger_level": "critical"
-  },
-  {
-    "column": 12,
-    "x_range": [
-      476,
+    "zone": 9,
+    "y_range": [
+      462,
       520
     ],
     "danger_score": 100,

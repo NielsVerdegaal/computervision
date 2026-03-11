@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 DEFAULT_IMAGE_DIR = Path("testimages")
 DEFAULT_OUTPUT_DIR = Path("outputs")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
-NUM_COLUMNS = 12
+NUM_ZONES = 9
 
 
 def load_image(image_path: Path) -> Image.Image:
@@ -40,29 +40,30 @@ def build_green_mask(image_array: np.ndarray) -> np.ndarray:
     )
 
 
-FLOOR_STRIP_FRACTION = 0.15  # only the bottom 15% is used for floor detection
+FLOOR_STRIP_FRACTION = 0.15  # left 15% of width is the floor detection strip
 
 
-def compute_danger_scores(mask: np.ndarray, num_columns: int = NUM_COLUMNS) -> List[dict]:
-    """Score each column using only the bottom 15% of the image.
+def compute_danger_scores(mask: np.ndarray, num_zones: int = NUM_ZONES) -> List[dict]:
+    """Score each horizontal band using the left 15% of the image.
 
-    The floor is only visible near the bottom of the frame, so we crop the
-    mask to that strip before scoring. Non-green pixels inside the strip are
-    counted as obstacles.
+    The camera is in portrait orientation: the floor is on the left side.
+    The image height represents lateral directions (top = one side, bottom = other).
+    For each of the 9 horizontal bands we check the left strip for floor coverage.
+    No floor visible in a band means that direction is blocked = high danger.
     """
     height, width = mask.shape
-    strip_start = int(height * (1.0 - FLOOR_STRIP_FRACTION))
-    strip = mask[strip_start:, :]          # bottom 15% rows only
+    strip_end = int(width * FLOOR_STRIP_FRACTION)  # left 15% of width
+    strip = mask[:, :strip_end]       # all rows, left strip only
     obstacle_strip = ~strip
 
-    column_edges = np.linspace(0, width, num_columns + 1, dtype=int)
+    band_edges = np.linspace(0, height, num_zones + 1, dtype=int)
     results: List[dict] = []
 
-    for index in range(num_columns):
-        x0 = int(column_edges[index])
-        x1 = int(column_edges[index + 1])
-        column = obstacle_strip[:, x0:x1]
-        score = 0.0 if x1 <= x0 else float(column.mean())
+    for index in range(num_zones):
+        y0 = int(band_edges[index])
+        y1 = int(band_edges[index + 1])
+        band = obstacle_strip[y0:y1, :]
+        score = 0.0 if y1 <= y0 else float(band.mean())
         danger = int(round(score * 100))
 
         if danger < 25:
@@ -76,8 +77,8 @@ def compute_danger_scores(mask: np.ndarray, num_columns: int = NUM_COLUMNS) -> L
 
         results.append(
             {
-                "column": index + 1,
-                "x_range": [x0, x1],
+                "zone": index + 1,
+                "y_range": [y0, y1],
                 "danger_score": danger,
                 "danger_level": level,
             }
@@ -93,14 +94,14 @@ def score_to_color(score: int) -> tuple[int, int, int]:
 
 
 def overlay_mask(base_image: Image.Image, mask: np.ndarray) -> Image.Image:
-    """Highlight the bottom 15% strip: green tint = safe floor, red tint = obstacle."""
+    """Highlight the left 15% strip: green tint = safe floor, red tint = obstacle."""
     image_array = np.array(base_image).copy()
-    height = image_array.shape[0]
-    strip_start = int(height * (1.0 - FLOOR_STRIP_FRACTION))
+    width = image_array.shape[1]
+    strip_end = int(width * FLOOR_STRIP_FRACTION)
     alpha = 0.45
 
-    strip_mask = mask[strip_start:, :]
-    strip = image_array[strip_start:, :, :]
+    strip_mask = mask[:, :strip_end]
+    strip = image_array[:, :strip_end, :]
 
     safe_overlay = np.zeros_like(strip)
     safe_overlay[:, :, 1] = 180
@@ -115,7 +116,7 @@ def overlay_mask(base_image: Image.Image, mask: np.ndarray) -> Image.Image:
         strip[obstacle_strip_mask] * (1 - alpha) + danger_overlay[obstacle_strip_mask] * alpha
     ).astype(np.uint8)
 
-    image_array[strip_start:, :, :] = strip
+    image_array[:, :strip_end, :] = strip
     return Image.fromarray(image_array)
 
 
@@ -126,18 +127,19 @@ def annotate_image(image: Image.Image, scores: List[dict]) -> Image.Image:
     width, height = annotated.size
 
     for item in scores:
-        x0, x1 = item["x_range"]
+        y0, y1 = item["y_range"]
         score = item["danger_score"]
-        label = f"{item['column']}: {score}"
+        label = f"{item['zone']}: {score}"
         color = score_to_color(score)
 
-        draw.rectangle([x0, 0, x1, height], outline=color + (255,), width=2)
+        # Coloured band border spanning the full width
+        draw.rectangle([0, y0, width, y1], outline=color + (255,), width=2)
 
         text_bbox = draw.textbbox((0, 0), label, font=font)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
-        text_x = x0 + max(4, ((x1 - x0) - text_width) // 2)
-        text_y = 8
+        text_x = width - text_width - 10
+        text_y = y0 + max(2, ((y1 - y0) - text_height) // 2)
 
         draw.rounded_rectangle(
             [text_x - 4, text_y - 3, text_x + text_width + 4, text_y + text_height + 3],
@@ -146,12 +148,13 @@ def annotate_image(image: Image.Image, scores: List[dict]) -> Image.Image:
         )
         draw.text((text_x, text_y), label, fill=(255, 255, 255), font=font)
 
-    for index in range(1, NUM_COLUMNS):
-        x = int(round(width * index / NUM_COLUMNS))
-        draw.line([(x, 0), (x, height)], fill=(255, 255, 255, 180), width=1)
+    # Horizontal dividing lines between zones
+    for index in range(1, NUM_ZONES):
+        y = int(round(height * index / NUM_ZONES))
+        draw.line([(0, y), (width, y)], fill=(255, 255, 255, 180), width=1)
 
     safest = min(scores, key=lambda item: item["danger_score"])
-    summary = f"Safest: column {safest['column']} ({safest['danger_score']})"
+    summary = f"Safest: zone {safest['zone']} ({safest['danger_score']})"
     summary_bbox = draw.textbbox((0, 0), summary, font=font)
     summary_width = summary_bbox[2] - summary_bbox[0]
     summary_height = summary_bbox[3] - summary_bbox[1]
@@ -286,7 +289,7 @@ def main() -> None:
         print(f"  Annotated: {annotated_path}")
         for item in scores:
             print(
-                f"  col {item['column']:>2}: {item['danger_score']:>3}  ({item['danger_level']})"
+                f"  zone {item['zone']:>2}: {item['danger_score']:>3}  ({item['danger_level']})"
             )
 
     print(f"\nProcessed {len(images)} image(s). Opening preview...")
