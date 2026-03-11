@@ -1,0 +1,110 @@
+[
+  {
+    "column": 1,
+    "x_range": [
+      0,
+      43
+    ],
+    "danger_score": 1,
+    "danger_level": "low"
+  },
+  {
+    "column": 2,
+    "x_range": [
+      43,
+      86
+    ],
+    "danger_score": 0,
+    "danger_level": "low"
+  },
+  {
+    "column": 3,
+    "x_range": [
+      86,
+      130
+    ],
+    "danger_score": 0,
+    "danger_level": "low"
+  },
+  {
+    "column": 4,
+    "x_range": [
+      130,
+      173
+    ],
+    "danger_score": 0,
+    "danger_level": "low"
+  },
+  {
+    "column": 5,
+    "x_range": [
+      173,
+      216
+    ],
+    "danger_score": 1,
+    "danger_level": "low"
+  },
+  {
+    "column": 6,
+    "x_range": [
+      216,
+      260
+    ],
+    "danger_score": 3,
+    "danger_level": "low"
+  },
+  {
+    "column": 7,
+    "x_range": [
+      260,
+      303
+    ],
+    "danger_score": 93,
+    "danger_level": "critical"
+  },
+  {
+    "column": 8,
+    "x_range": [
+      303,
+      346
+    ],
+    "danger_score": 100,
+    "danger_level": "critical"
+  },
+  {
+    "column": 9,
+    "x_range": [
+      346,
+      390
+    ],
+    "danger_score": 98,
+    "danger_level": "critical"
+  },
+  {
+    "column": 10,
+    "x_range": [
+      390,
+      433
+    ],
+    "danger_score": 100,
+    "danger_level": "critical"
+  },
+  {
+    "column": 11,
+    "x_range": [
+      433,
+      476
+    ],
+    "danger_score": 99,
+    "danger_level": "critical"
+  },
+  {
+    "column": 12,
+    "x_range": [
+      476,
+      520
+    ],
+    "danger_score": 100,
+    "danger_level": "critical"
+  }
+]

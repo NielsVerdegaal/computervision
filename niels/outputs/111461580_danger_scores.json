@@ -1,0 +1,110 @@
+[
+  {
+    "column": 1,
+    "x_range": [
+      0,
+      43
+    ],
+    "danger_score": 52,
+    "danger_level": "high"
+  },
+  {
+    "column": 2,
+    "x_range": [
+      43,
+      86
+    ],
+    "danger_score": 27,
+    "danger_level": "medium"
+  },
+  {
+    "column": 3,
+    "x_range": [
+      86,
+      130
+    ],
+    "danger_score": 88,
+    "danger_level": "critical"
+  },
+  {
+    "column": 4,
+    "x_range": [
+      130,
+      173
+    ],
+    "danger_score": 31,
+    "danger_level": "medium"
+  },
+  {
+    "column": 5,
+    "x_range": [
+      173,
+      216
+    ],
+    "danger_score": 0,
+    "danger_level": "low"
+  },
+  {
+    "column": 6,
+    "x_range": [
+      216,
+      260
+    ],
+    "danger_score": 11,
+    "danger_level": "low"
+  },
+  {
+    "column": 7,
+    "x_range": [
+      260,
+      303
+    ],
+    "danger_score": 20,
+    "danger_level": "low"
+  },
+  {
+    "column": 8,
+    "x_range": [
+      303,
+      346
+    ],
+    "danger_score": 41,
+    "danger_level": "medium"
+  },
+  {
+    "column": 9,
+    "x_range": [
+      346,
+      390
+    ],
+    "danger_score": 41,
+    "danger_level": "medium"
+  },
+  {
+    "column": 10,
+    "x_range": [
+      390,
+      433
+    ],
+    "danger_score": 56,
+    "danger_level": "high"
+  },
+  {
+    "column": 11,
+    "x_range": [
+      433,
+      476
+    ],
+    "danger_score": 74,
+    "danger_level": "high"
+  },
+  {
+    "column": 12,
+    "x_range": [
+      476,
+      520
+    ],
+    "danger_score": 91,
+    "danger_level": "critical"
+  }
+]
