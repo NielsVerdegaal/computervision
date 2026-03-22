@@ -13,6 +13,7 @@ DEFAULT_IMAGE_DIR = Path("testimages")
 DEFAULT_OUTPUT_DIR = Path("outputs")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NUM_ZONES = 9
+DANGER_DETECTED_THRESHOLD = 30
 
 
 def load_image(image_path: Path) -> Image.Image:
@@ -87,6 +88,31 @@ def compute_danger_scores(mask: np.ndarray, num_zones: int = NUM_ZONES) -> List[
     return results
 
 
+def check_danger(scores: List[dict], image_array: np.ndarray) -> List[dict]:
+    """For dangerous zones, count green pixels in the full grid box of that zone."""
+    mask = build_green_mask(image_array)
+
+    for item in scores:
+        y0, y1 = item["y_range"]
+        item["full_box_green_pixels"] = None
+        item["full_box_total_pixels"] = None
+        item["full_box_green_percent"] = None
+
+        if item["danger_score"] > DANGER_DETECTED_THRESHOLD and y1 > y0:
+            zone_box = mask[y0:y1, :]
+            total_pixels = int(zone_box.size)
+            green_pixels = int(zone_box.sum())
+            green_percent = (
+                0.0 if total_pixels == 0 else round((green_pixels / total_pixels) * 100.0, 2)
+            )
+
+            item["full_box_green_pixels"] = green_pixels
+            item["full_box_total_pixels"] = total_pixels
+            item["full_box_green_percent"] = green_percent
+
+    return scores
+
+
 def score_to_color(score: int) -> tuple[int, int, int]:
     red = min(255, int(255 * (score / 100)))
     green = min(255, int(255 * (1 - score / 100)))
@@ -130,12 +156,18 @@ def annotate_image(image: Image.Image, scores: List[dict]) -> Image.Image:
         y0, y1 = item["y_range"]
         score = item["danger_score"]
         label = f"{item['zone']}: {score}"
+        if item.get("full_box_green_pixels") is not None:
+            label += (
+                f"\nfull box green: {item['full_box_green_pixels']}"
+                f"/{item['full_box_total_pixels']}"
+                f" ({item['full_box_green_percent']}%)"
+            )
         color = score_to_color(score)
 
         # Coloured band border spanning the full width
         draw.rectangle([0, y0, width, y1], outline=color + (255,), width=2)
 
-        text_bbox = draw.textbbox((0, 0), label, font=font)
+        text_bbox = draw.multiline_textbbox((0, 0), label, font=font, spacing=1)
         text_width = text_bbox[2] - text_bbox[0]
         text_height = text_bbox[3] - text_bbox[1]
         text_x = width - text_width - 10
@@ -146,7 +178,7 @@ def annotate_image(image: Image.Image, scores: List[dict]) -> Image.Image:
             radius=4,
             fill=color + (180,),
         )
-        draw.text((text_x, text_y), label, fill=(255, 255, 255), font=font)
+        draw.multiline_text((text_x, text_y), label, fill=(255, 255, 255), font=font, spacing=1)
 
     # Horizontal dividing lines between zones
     for index in range(1, NUM_ZONES):
@@ -229,6 +261,7 @@ def run_detector(image_path: Path, output_dir: Path) -> tuple[Path, Path, List[d
     image_array = np.array(image)
     mask = build_green_mask(image_array)
     scores = compute_danger_scores(mask)
+    scores = check_danger(scores, image_array)
 
     visual = annotate_image(overlay_mask(image, mask), scores)
 
@@ -288,9 +321,16 @@ def main() -> None:
         print(f"\n{image_path.name}")
         print(f"  Annotated: {annotated_path}")
         for item in scores:
-            print(
+            message = (
                 f"  zone {item['zone']:>2}: {item['danger_score']:>3}  ({item['danger_level']})"
             )
+            if item.get("full_box_green_pixels") is not None:
+                message += (
+                    f"  full box green: {item['full_box_green_pixels']}"
+                    f"/{item['full_box_total_pixels']}"
+                    f" ({item['full_box_green_percent']}%)"
+                )
+            print(message)
 
     print(f"\nProcessed {len(images)} image(s). Opening preview...")
     show_images(annotated_paths)

@@ -5,8 +5,11 @@
       0,
       57
     ],
-    "danger_score": 12,
-    "danger_level": "low"
+    "danger_score": 10,
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 2,
@@ -15,7 +18,10 @@
       115
     ],
     "danger_score": 22,
-    "danger_level": "low"
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 3,
@@ -24,7 +30,10 @@
       173
     ],
     "danger_score": 1,
-    "danger_level": "low"
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 4,
@@ -33,7 +42,10 @@
       231
     ],
     "danger_score": 1,
-    "danger_level": "low"
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 5,
@@ -42,7 +54,10 @@
       288
     ],
     "danger_score": 0,
-    "danger_level": "low"
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 6,
@@ -51,7 +66,10 @@
       346
     ],
     "danger_score": 1,
-    "danger_level": "low"
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 7,
@@ -59,8 +77,11 @@
       346,
       404
     ],
-    "danger_score": 1,
-    "danger_level": "low"
+    "danger_score": 0,
+    "danger_level": "low",
+    "full_box_green_pixels": null,
+    "full_box_total_pixels": null,
+    "full_box_green_percent": null
   },
   {
     "zone": 8,
@@ -69,7 +90,10 @@
       462
     ],
     "danger_score": 69,
-    "danger_level": "high"
+    "danger_level": "high",
+    "full_box_green_pixels": 657,
+    "full_box_total_pixels": 13920,
+    "full_box_green_percent": 4.72
   },
   {
     "zone": 9,
@@ -78,6 +102,9 @@
       520
     ],
     "danger_score": 100,
-    "danger_level": "critical"
+    "danger_level": "critical",
+    "full_box_green_pixels": 1,
+    "full_box_total_pixels": 13920,
+    "full_box_green_percent": 0.01
   }
 ]
