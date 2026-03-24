@@ -1,0 +1,122 @@
+[
+  {
+    "zone": 1,
+    "danger_score": 12,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 14,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 93.33,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 2,
+    "danger_score": 1,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 10,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 71.43,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 3,
+    "danger_score": 1,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 1,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 6.67,
+    "invalid_percent_above_15": false
+  },
+  {
+    "zone": 4,
+    "danger_score": 3,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 10,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 71.43,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 5,
+    "danger_score": 27,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 14,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 6,
+    "danger_score": 26,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 15,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 7,
+    "danger_score": 14,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 11,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 78.57,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 8,
+    "danger_score": 22,
+    "danger_above_30": false,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 14,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 93.33,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 9,
+    "danger_score": 37,
+    "danger_above_30": true,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 14,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 10,
+    "danger_score": 61,
+    "danger_above_30": true,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 15,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 11,
+    "danger_score": 100,
+    "danger_above_30": true,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 14,
+    "total_horizon_points": 14,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  },
+  {
+    "zone": 12,
+    "danger_score": 100,
+    "danger_above_30": true,
+    "min_valid_x": 60,
+    "invalid_horizon_points": 15,
+    "total_horizon_points": 15,
+    "invalid_horizon_percent": 100.0,
+    "invalid_percent_above_15": true
+  }
+]

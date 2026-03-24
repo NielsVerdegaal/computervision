@@ -1,198 +1,177 @@
 import cv2
 import numpy as np
+from pathlib import Path
 
 
-def largest_connected_component(mask: np.ndarray) -> np.ndarray:
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
-    if num_labels <= 1:
-        return mask
+def is_green_mask(img):
+    blue = img[:, :, 0].astype(np.int16)
+    green = img[:, :, 1].astype(np.int16)
+    red = img[:, :, 2].astype(np.int16)
 
-    # Ignore label 0 (background)
-    largest_label = 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])
-    out = np.zeros_like(mask)
-    out[labels == largest_label] = 255
+    return (
+        (green > 55)
+        & (green < 200)
+        & (red > 40)
+        & ((green - blue) > 25)
+        & ((green - red) > -25)
+    )
+
+
+def find_boundary_right_to_left(img, min_green_run=3):
+    """
+    Scan from RIGHT → LEFT for each row.
+    Detect first green pixel.
+    """
+    green_mask = is_green_mask(img)
+    h, w = green_mask.shape
+
+    boundary_points = []
+
+    # Scan every third row: current row, then skip 2 pixels vertically.
+    for y in range(0, h, 3):
+        found = False
+
+        # scan from right → left
+        for x in range(w - 1, min_green_run - 1, -1):
+            if np.all(green_mask[y, x - min_green_run + 1:x + 1]):
+                boundary_points.append((x, y))
+                found = True
+                break
+
+        if not found:
+            boundary_points.append((-1, y))
+
+    return boundary_points, (green_mask.astype(np.uint8) * 255)
+
+
+def draw_boundary(img, boundary_points, color=(0, 255, 255), thickness=2):
+    out = img.copy()
+
+    valid_pts = [(x, y) for x, y in boundary_points if x >= 0]
+    if len(valid_pts) > 1:
+        pts = np.array(valid_pts, dtype=np.int32).reshape(-1, 1, 2)
+        cv2.polylines(out, [pts], False, color, thickness)
+
     return out
 
 
-def extend_line_to_image(x1, y1, x2, y2, w, h):
-    """
-    Extend a line segment so it spans the image.
-    Returns two endpoints clipped to the image rectangle.
-    """
-    points = []
-
-    dx = x2 - x1
-    dy = y2 - y1
-
-    # Vertical line
-    if dx == 0:
-        x = x1
-        if 0 <= x < w:
-            return (x, 0), (x, h - 1)
-
-    # Intersections with x = 0 and x = w-1
-    if dx != 0:
-        t = (0 - x1) / dx
-        y = y1 + t * dy
-        if 0 <= y < h:
-            points.append((0, int(round(y))))
-
-        t = ((w - 1) - x1) / dx
-        y = y1 + t * dy
-        if 0 <= y < h:
-            points.append((w - 1, int(round(y))))
-
-    # Horizontal line
-    if dy == 0:
-        y = y1
-        if 0 <= y < h:
-            return (0, y), (w - 1, y)
-
-    # Intersections with y = 0 and y = h-1
-    if dy != 0:
-        t = (0 - y1) / dy
-        x = x1 + t * dx
-        if 0 <= x < w:
-            points.append((int(round(x)), 0))
-
-        t = ((h - 1) - y1) / dy
-        x = x1 + t * dx
-        if 0 <= x < w:
-            points.append((int(round(x)), h - 1))
-
-    # Keep unique points
-    unique_points = []
-    for p in points:
-        if p not in unique_points:
-            unique_points.append(p)
-
-    if len(unique_points) < 2:
-        return (x1, y1), (x2, y2)
-
-    return unique_points[0], unique_points[1]
-
-
-def detect_floor_horizon(image_bgr: np.ndarray):
-    """
-    Detect the boundary where the green floor ends.
-    Returns:
-        best_line_full: ((x1, y1), (x2, y2)) extended across the image
-        floor_mask: binary mask of green floor
-        boundary_mask: binary boundary image used for Hough
-    """
-    h, w = image_bgr.shape[:2]
-
-    # 1) Convert to HSV and threshold the green floor
-    hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
-
-    # These values work for your sample; you may tune them for your camera.
-    lower_green = np.array([25, 20, 40], dtype=np.uint8)
-    upper_green = np.array([95, 255, 255], dtype=np.uint8)
-
-    mask = cv2.inRange(hsv, lower_green, upper_green)
-
-    # 2) Clean mask
-    kernel = np.ones((7, 7), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
-    # Keep only the largest green region
-    floor_mask = largest_connected_component(mask)
-
-    # 3) Get the boundary of the floor mask
-    boundary_mask = cv2.morphologyEx(
-        floor_mask,
-        cv2.MORPH_GRADIENT,
-        np.ones((5, 5), np.uint8)
-    )
-
-    # Ignore pixels very close to the image border to reduce false detections
-    margin = 10
-    boundary_mask[:margin, :] = 0
-    boundary_mask[-margin:, :] = 0
-    boundary_mask[:, :margin] = 0
-    boundary_mask[:, -margin:] = 0
-
-    # 4) Detect candidate lines
-    lines = cv2.HoughLinesP(
-        boundary_mask,
-        rho=1,
-        theta=np.pi / 180,
-        threshold=30,
-        minLineLength=max(40, int(min(h, w) * 0.25)),
-        maxLineGap=20
-    )
-
-    if lines is None:
-        return None, floor_mask, boundary_mask
-
-    # 5) Pick the best line
-    # Score = length, with a penalty for being too close to image corners
-    best_score = -1
-    best_seg = None
-
-    corner_margin_x = int(w * 0.15)
-    corner_margin_y = int(h * 0.15)
-
-    for line in lines[:, 0]:
-        x1, y1, x2, y2 = map(int, line)
-        length = np.hypot(x2 - x1, y2 - y1)
-
-        mx = (x1 + x2) / 2.0
-        my = (y1 + y2) / 2.0
-
-        # Penalize segments whose midpoint is near a corner
-        near_left = mx < corner_margin_x
-        near_right = mx > (w - corner_margin_x)
-        near_top = my < corner_margin_y
-        near_bottom = my > (h - corner_margin_y)
-
-        penalty = 0
-        if (near_left and near_top) or (near_left and near_bottom) or \
-           (near_right and near_top) or (near_right and near_bottom):
-            penalty = 100
-
-        score = length - penalty
-
-        if score > best_score:
-            best_score = score
-            best_seg = (x1, y1, x2, y2)
-
-    if best_seg is None:
-        return None, floor_mask, boundary_mask
-
-    x1, y1, x2, y2 = best_seg
-    p1, p2 = extend_line_to_image(x1, y1, x2, y2, w, h)
-
-    return (p1, p2), floor_mask, boundary_mask
-
-
-def draw_detected_horizon(image_bgr: np.ndarray, line, color=(0, 0, 255), thickness=3):
-    out = image_bgr.copy()
-    if line is not None:
-        (x1, y1), (x2, y2) = line
-        cv2.line(out, (x1, y1), (x2, y2), color, thickness)
+def draw_points(img, boundary_points):
+    out = img.copy()
+    for x, y in boundary_points:
+        if x >= 0:
+            cv2.circle(out, (x, y), 1, (0, 0, 255), -1)
     return out
+
+
+def evaluate_boundary_points(boundary_points,
+                             row_step=3,
+                             max_slope=2.0,
+                             max_slope_change=1.5,
+                             window=2):
+    """
+    Returns a list of booleans (same length as boundary_points)
+    indicating whether each point is a valid floor boundary point.
+    """
+
+    n = len(boundary_points)
+    valid_flags = [False] * n
+
+    # Extract valid points
+    pts = [(i, x, y) for i, (x, y) in enumerate(boundary_points) if x >= 0]
+
+    if len(pts) < 3:
+        return valid_flags
+
+    # Compute slopes between consecutive valid points
+    slopes = [None] * n
+
+    for k in range(1, len(pts)):
+        i1, x1, y1 = pts[k - 1]
+        i2, x2, y2 = pts[k]
+
+        dy = y2 - y1
+        if dy == 0:
+            continue
+
+        slope = (x2 - x1) / dy
+        slopes[i2] = slope
+
+    # Evaluate each point
+    for k in range(len(pts)):
+        idx, x, y = pts[k]
+
+        local_slopes = []
+
+        # Collect slopes in a local window
+        for j in range(max(0, idx - window), min(n, idx + window + 1)):
+            if slopes[j] is not None:
+                local_slopes.append(slopes[j])
+
+        if len(local_slopes) < 2:
+            continue
+
+        local_slopes = np.array(local_slopes)
+
+        # 1. Check steepness
+        if np.any(np.abs(local_slopes) > max_slope):
+            continue
+
+        # 2. Check smoothness (change in slope)
+        slope_changes = np.diff(local_slopes)
+        if np.any(np.abs(slope_changes) > max_slope_change):
+            continue
+
+        # If passed all checks → valid
+        valid_flags[idx] = True
+
+    return valid_flags
+
+def draw_validity(img, boundary_points, valid_flags):
+    out = img.copy()
+
+    for (x, y), valid in zip(boundary_points, valid_flags):
+        if x < 0:
+            continue
+
+        if valid:
+            color = (0, 255, 0)  # green = good
+        else:
+            color = (0, 0, 255)  # red = bad
+
+        cv2.circle(out, (x, y), 2, color, -1)
+
+    return out
+
 
 
 if __name__ == "__main__":
-    input_path = "testimages/161494499.jpg"      # change to your image
-    output_path = "outputs/horizon_detected.jpg"
+    image_dir = Path("testimages")
+    output_dir = Path("outputs")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    img = cv2.imread(input_path)
-    if img is None:
-        raise FileNotFoundError(f"Could not read image: {input_path}")
+    image_paths = sorted(
+        p for p in image_dir.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".bmp"}
+    )
 
-    line, floor_mask, boundary_mask = detect_floor_horizon(img)
-    result = draw_detected_horizon(img, line)
+    for image_path in image_paths:
+        img = cv2.imread(str(image_path))
+        if img is None:
+            print(f"Skipping unreadable image: {image_path}")
+            continue
 
-    cv2.imwrite(output_path, result)
-    cv2.imwrite("outputs/floor_mask.jpg", floor_mask)
-    cv2.imwrite("outputs/boundary_mask.jpg", boundary_mask)
+        boundary_points, green_mask = find_boundary_right_to_left(img, min_green_run=6)
+        valid_flags = evaluate_boundary_points(boundary_points)
 
-    if line is not None:
-        print("Detected horizon line:", line)
-    else:
-        print("No horizon line detected")
+        result_validity = draw_validity(img, boundary_points, valid_flags)
+        result_line = draw_boundary(img, boundary_points)
+        result_points = draw_points(img, boundary_points)
 
-    print("Saved:", output_path)
+        stem = image_path.stem
+        cv2.imwrite(str(output_dir / f"{stem}_boundary_validity.jpg"), result_validity)
+        cv2.imwrite(str(output_dir / f"{stem}_boundary_line.jpg"), result_line)
+        cv2.imwrite(str(output_dir / f"{stem}_boundary_points.jpg"), result_points)
+        cv2.imwrite(str(output_dir / f"{stem}_green_mask.jpg"), green_mask)
+
+        print(f"Processed: {image_path.name}")
+
+    print("Done!")
